@@ -5,24 +5,33 @@ import json
 import os
 import re
 
+# EN: File to store database connection settings
+# TR: Veritabanı bağlantı ayarlarının saklanacağı dosya
 SETTINGS_FILE = "db_settings.json"
 
 class DBSearchApp:
     def __init__(self, root):
+        # EN: Initialize the main application window
+        # TR: Ana uygulama penceresini başlat
         self.root = root
         self.root.title("DB Şema Arama Motoru")
         self.root.geometry("700x550")
         self.db_schema = {}
         
-        # Başlangıçta ayarları yükle
-        self.settings = self.ayarlari_yukle()
+        # EN: Load settings on startup
+        # TR: Başlangıçta ayarları yükle
+        self.settings = self.load_settings()
         
+        # EN: If settings exist, fetch data; otherwise, open settings screen
+        # TR: Ayarlar varsa verileri hazırla, yoksa ayar ekranını aç
         if self.settings:
-            self.verileri_hazirla()
+            self.fetch_data()
         else:
-            self.ayar_ekrani_ac()
+            self.open_settings_window()
 
-    def ayarlari_yukle(self):
+    def load_settings(self):
+        # EN: Check if the settings file exists and load its content
+        # TR: Ayar dosyasının var olup olmadığını kontrol et ve içeriğini yükle
         if os.path.exists(SETTINGS_FILE):
             try:
                 with open(SETTINGS_FILE, "r") as f:
@@ -31,17 +40,24 @@ class DBSearchApp:
                 return None
         return None
 
-    def ayarlari_kaydet(self, server, db, user, pwd):
+    def save_settings(self, server, db, user, pwd):
+        # EN: Save connection settings to a JSON file
+        # TR: Bağlantı ayarlarını bir JSON dosyasına kaydet
         data = {"server": server, "database": db, "user": user, "password": pwd}
         with open(SETTINGS_FILE, "w") as f:
             json.dump(data, f)
         messagebox.showinfo("Başarili", "Ayarlar kaydedildi! Veriler çekiliyor...")
         self.settings = data
-        self.verileri_hazirla()
+        self.fetch_data()
 
-    def verileri_hazirla(self):
-        """Veritabanina bağlanip verileri çeker ve arayüzü kurar."""
+    def fetch_data(self):
+        """
+        EN: Connects to the database, fetches schema data, and builds the UI.
+        TR: Veritabanina bağlanip verileri çeker ve arayüzü kurar.
+        """
         try:
+            # EN: Prepare the ODBC connection string for SQL Server
+            # TR: SQL Server için ODBC bağlantı dizesini hazırla
             conn_str = (
                 f"DRIVER={{ODBC Driver 17 for SQL Server}};"
                 f"SERVER={self.settings['server']};"
@@ -52,115 +68,160 @@ class DBSearchApp:
             conn = pyodbc.connect(conn_str)
             cursor = conn.cursor()
             
+            # EN: SQL query to get all table and column names
+            # TR: Tüm tablo ve kolon adlarını çekmek için SQL sorgusu
             query = "SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS ORDER BY TABLE_NAME"
             cursor.execute(query)
             
+            # EN: Parse results into a dictionary grouped by table name
+            # TR: Sonuçları tablo adına göre gruplanmış bir sözlüğe dönüştür
             self.db_schema = {}
             for row in cursor.fetchall():
-                tablo, kolon = row
-                if tablo not in self.db_schema:
-                    self.db_schema[tablo] = []
-                self.db_schema[tablo].append(kolon)
+                table, column = row
+                if table not in self.db_schema:
+                    self.db_schema[table] = []
+                self.db_schema[table].append(column)
                 
             conn.close()
-            # Veriler geldiyse ana arama arayüzünü oluştur
-            self.arayuz_olustur()
+            
+            # EN: Build the main search interface if data is successfully fetched
+            # TR: Veriler başarıyla geldiyse ana arama arayüzünü oluştur
+            self.build_ui()
             
         except Exception as e:
+            # EN: Show error and ask if the user wants to update settings
+            # TR: Hata göster ve kullanıcının ayarları güncellemek isteyip istemediğini sor
             res = messagebox.askretrycancel("Bağlanti Hatasi", f"Veritabanina bağlanilamadi. Bilgileri güncellemek ister misiniz?\n\nHata: {e}")
             if res:
-                self.ayar_ekrani_ac()
+                self.open_settings_window()
 
-    def ayar_ekrani_ac(self):
-        self.ayar_penceresi = tk.Toplevel(self.root)
-        self.ayar_penceresi.title("Bağlanti Ayarlari")
-        self.ayar_penceresi.geometry("350x400")
+    def open_settings_window(self):
+        # EN: Open a top-level window for database connection settings
+        # TR: Veritabanı bağlantı ayarları için yeni bir üst düzey pencere aç
+        self.settings_window = tk.Toplevel(self.root)
+        self.settings_window.title("Bağlanti Ayarlari")
+        self.settings_window.geometry("350x400")
         try:
-            self.ayar_penceresi.iconbitmap("db_ikon.ico.ico")
+            self.settings_window.iconbitmap("db_ikon.ico")
         except:
             pass
-        self.ayar_penceresi.grab_set() # Diğer pencereye tıklanmasını engeller
+            
+        # EN: Prevent interacting with the main window while settings are open
+        # TR: Ayarlar açıkken ana pencereye tıklanmasını engeller
+        self.settings_window.grab_set() 
 
-        tk.Label(self.ayar_penceresi, text="SQL Server Bağlanti Bilgileri", font=("Arial", 10, "bold")).pack(pady=10)
+        tk.Label(self.settings_window, text="SQL Server Bağlanti Bilgileri", font=("Arial", 10, "bold")).pack(pady=10)
 
+        # EN: Define input fields for the settings window
+        # TR: Ayar penceresi için giriş alanlarını tanımla
         fields = [("Server:", "server"), ("Database:", "database"), ("User:", "user"), ("Password:", "password")]
         self.entries = {}
 
         for label_text, key in fields:
-            tk.Label(self.ayar_penceresi, text=label_text).pack()
-            ent = tk.Entry(self.ayar_penceresi, show="*" if key == "password" else "")
+            tk.Label(self.settings_window, text=label_text).pack()
+            # EN: Mask password field with asterisks
+            # TR: Şifre alanını yıldız karakteriyle gizle
+            ent = tk.Entry(self.settings_window, show="*" if key == "password" else "")
             ent.pack(pady=5)
-            # Eğer eski ayar varsa içini doldur
+            
+            # EN: Fill in the fields if old settings exist
+            # TR: Eğer eski ayar varsa giriş alanlarını doldur
             if self.settings and key in self.settings:
                 ent.insert(0, self.settings[key])
             self.entries[key] = ent
 
-        tk.Button(self.ayar_penceresi, text="Kaydet ve Bağlan", bg="#4CAF50", fg="white",
-                  command=lambda: [self.ayar_penceresi.withdraw(), 
-                                   self.ayarlari_kaydet(self.entries['server'].get(), 
-                                                       self.entries['database'].get(), 
-                                                       self.entries['user'].get(), 
-                                                       self.entries['password'].get())]).pack(pady=20)
+        # EN: Save button logic to update settings
+        # TR: Ayarları güncellemek için kaydet butonu mantığı
+        tk.Button(self.settings_window, text="Kaydet ve Bağlan", bg="#4CAF50", fg="white",
+                  command=lambda: [self.settings_window.withdraw(), 
+                                   self.save_settings(self.entries['server'].get(), 
+                                                      self.entries['database'].get(), 
+                                                      self.entries['user'].get(), 
+                                                      self.entries['password'].get())]).pack(pady=20)
 
-    def arayuz_olustur(self):
-        """Ana arama ekranini temizleyip yeniden kurar."""
+    def build_ui(self):
+        """
+        EN: Clears the main search screen and rebuilds it.
+        TR: Ana arama ekranini temizleyip yeniden kurar.
+        """
+        # EN: Destroy all existing widgets in the root window
+        # TR: Kök penceredeki mevcut tüm widget'ları yok et
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Üst Panel
-        frame_ust = tk.Frame(self.root, padx=20, pady=20)
-        frame_ust.pack(fill="x")
+        # EN: Top Panel for Search Input
+        # TR: Arama Girişi için Üst Panel
+        top_frame = tk.Frame(self.root, padx=20, pady=20)
+        top_frame.pack(fill="x")
 
-        tk.Label(frame_ust, text=f"Bağli DB: {self.settings['database']}", fg="green").pack(anchor="e")
-        tk.Label(frame_ust, text="Arama Yap (* kullanabilirsiniz):", font=("Segoe UI", 10)).pack(anchor="w")
+        tk.Label(top_frame, text=f"Bağli DB: {self.settings['database']}", fg="green").pack(anchor="e")
+        tk.Label(top_frame, text="Arama Yap (* kullanabilirsiniz):", font=("Segoe UI", 10)).pack(anchor="w")
 
-        self.entry_arama = tk.Entry(frame_ust, font=("Segoe UI", 12))
-        self.entry_arama.pack(fill="x", pady=5)
-        self.entry_arama.bind("<Return>", lambda e: self.arama_yap())
+        self.search_entry = tk.Entry(top_frame, font=("Segoe UI", 12))
+        self.search_entry.pack(fill="x", pady=5)
+        # EN: Bind the Enter key to the search function
+        # TR: Enter tuşunu arama fonksiyonuna bağla
+        self.search_entry.bind("<Return>", lambda e: self.perform_search())
 
-        btn_ara = tk.Button(frame_ust, text="Sistemde Ara", bg="#0078D4", fg="white", 
-                           font=("Segoe UI", 10, "bold"), command=self.arama_yap, cursor="hand2")
-        btn_ara.pack(fill="x", pady=5)
+        search_btn = tk.Button(top_frame, text="Sistemde Ara", bg="#0078D4", fg="white", 
+                               font=("Segoe UI", 10, "bold"), command=self.perform_search, cursor="hand2")
+        search_btn.pack(fill="x", pady=5)
 
-        # Alt Panel (Sonuçlar)
-        frame_alt = tk.Frame(self.root)
-        frame_alt.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        # EN: Bottom Panel for Results (Listbox & Scrollbar)
+        # TR: Sonuçlar için Alt Panel (Liste kutusu ve Kaydırma çubuğu)
+        bottom_frame = tk.Frame(self.root)
+        bottom_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
-        scrollbar = tk.Scrollbar(frame_alt)
+        scrollbar = tk.Scrollbar(bottom_frame)
         scrollbar.pack(side="right", fill="y")
 
-        self.listbox_sonuclar = tk.Listbox(frame_alt, font=("Consolas", 10), yscrollcommand=scrollbar.set)
-        self.listbox_sonuclar.pack(side="left", fill="both", expand=True)
-        scrollbar.config(command=self.listbox_sonuclar.yview)
+        self.results_listbox = tk.Listbox(bottom_frame, font=("Consolas", 10), yscrollcommand=scrollbar.set)
+        self.results_listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=self.results_listbox.yview)
 
-        # Ayarları Değiştir Butonu (Küçük, en altta)
-        tk.Button(self.root, text="Bağlanti Ayarlarini Güncelle", command=self.ayar_ekrani_ac, font=("Arial", 8)).pack(pady=5)
+        # EN: Small button at the bottom to update settings
+        # TR: Ayarları güncellemek için en altta küçük buton
+        tk.Button(self.root, text="Bağlanti Ayarlarini Güncelle", command=self.open_settings_window, font=("Arial", 8)).pack(pady=5)
 
-    def arama_yap(self):
-        kelime = self.entry_arama.get().strip()
-        if not kelime: return
+    def perform_search(self):
+        # EN: Get the search keyword and prepare regex pattern
+        # TR: Arama kelimesini al ve regex desenini hazırla
+        keyword = self.search_entry.get().strip()
+        if not keyword: return
             
-        self.listbox_sonuclar.delete(0, tk.END)
-        search_pattern = kelime.replace("*", ".*")
+        self.results_listbox.delete(0, tk.END)
+        # EN: Replace '*' with '.*' for regex wildcard search
+        # TR: Regex joker karakter araması için '*' karakterini '.*' ile değiştir
+        search_pattern = keyword.replace("*", ".*")
         
         try:
+            # EN: Compile the regex pattern (case-insensitive)
+            # TR: Regex desenini derle (büyük/küçük harf duyarsız)
             regex = re.compile(f"^{search_pattern}$", re.IGNORECASE)
         except:
             messagebox.showerror("Hata", "Geçersiz arama karakteri!")
             return
 
-        for tablo, kolonlar in self.db_schema.items():
-            if regex.search(tablo):
-                self.listbox_sonuclar.insert(tk.END, f"📁 [TABLO] {tablo}")
-                for k in kolonlar:
-                    self.listbox_sonuclar.insert(tk.END, f"   🔹 {k}")
-                self.listbox_sonuclar.insert(tk.END, "-"*40)
+        # EN: Search through the schema dictionary
+        # TR: Şema sözlüğü içerisinde arama yap
+        for table, columns in self.db_schema.items():
+            if regex.search(table):
+                # EN: If table name matches, list the table and all its columns
+                # TR: Tablo adı eşleşirse, tabloyu ve tüm kolonlarını listele
+                self.results_listbox.insert(tk.END, f"📁 [TABLO] {table}")
+                for col in columns:
+                    self.results_listbox.insert(tk.END, f"   🔹 {col}")
+                self.results_listbox.insert(tk.END, "-"*40)
             else:
-                for kolon in kolonlar:
-                    if regex.search(kolon):
-                        self.listbox_sonuclar.insert(tk.END, f"   📌 [KOLON] {kolon}  (Tablo: {tablo})")
+                # EN: If table doesn't match, check individual columns
+                # TR: Tablo eşleşmezse, kolonları tek tek kontrol et
+                for col in columns:
+                    if regex.search(col):
+                        self.results_listbox.insert(tk.END, f"   📌 [KOLON] {col}  (Tablo: {table})")
 
 if __name__ == "__main__":
+    # EN: Create the main window and run the application
+    # TR: Ana pencereyi oluştur ve uygulamayı çalıştır
     root = tk.Tk()
     try:
         root.iconbitmap("db_ikon.ico") 
