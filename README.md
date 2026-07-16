@@ -6,7 +6,7 @@
 
 ---
 
-## 🚀 Özellikler / Features
+##  Özellikler / Features
 
 ### ✅ Veritabanı Bağlantısı / Database Connection
 
@@ -129,7 +129,7 @@ pip install -r requirements.txt
 ### 3. Uygulamayı Çalıştırın / Run the Application
 
 ```bash
-python main.py
+python db_search.py
 ```
 
 **TR:** İlk çalıştırmada açılan pencereden SQL Server bağlantı bilgilerinizi girin. Bilgiler daha sonraki kullanımlar için **db_settings.json** dosyasına kaydedilecektir.
@@ -142,7 +142,8 @@ python main.py
 
 **TR:** `db_settings.json` dosyası veritabanı bağlantı bilgilerinizi (kullanıcı adı ve parola) içerdiği için `.gitignore` dosyasına eklenmiştir. Bu dosyayı **asla** herkese açık GitHub depolarına yüklemeyin.
 
-**EN:** Since the `db_settings.json` file contains your database connection credentials (username and password), it is included in `.gitignore`. **Never** commit or push this file to a public GitHub repository.
+**EN:**  Since the `db_settings.json` file contains your database connection credentials (username and password), it is included in `.gitignore`. **Never** commit or push this file to a public GitHub repository.
+
 ---
 
 ## 🔎 Arama Örnekleri / Search Examples
