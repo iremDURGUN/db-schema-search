@@ -1,0 +1,7 @@
+# EN: Third-party library for SQL Server database connection
+# TR: SQL Server veritabanı bağlantısı için kullanılan dış kütüphane
+
+pyodbc>=4.0.0
+
+# EN: Note: tkinter, json, os, and re are Python standard libraries, so they are not listed here.
+# TR: Not: tkinter, json, os ve re Python standart kütüphaneleri olduğu için buraya eklenmemiştir.

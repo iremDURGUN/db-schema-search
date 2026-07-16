@@ -1,0 +1,15 @@
+# EN: Database credentials and settings (Critical!)
+# TR: Veritabanı kimlik bilgileri ve ayarlar (Kritik!)
+db_settings.json
+
+# EN: Python cache files
+# TR: Python önbellek dosyaları
+__pycache__/
+*.py[cod]
+*$py.class
+
+# EN: Virtual environment folders
+# TR: Sanal ortam klasörleri
+venv/
+env/
+.env/
