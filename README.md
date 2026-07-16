@@ -96,7 +96,7 @@ Invoice*
 ```
 DB-Schema-Search/
 │
-├── main.py
+├── db_search.py
 ├── db_settings.json
 ├── db_ikon.ico
 ├── README.md
@@ -108,7 +108,7 @@ DB-Schema-Search/
 ### 1. Repoyu Klonlayın / Clone the Repository
 
 ```bash
-git clone https://github.com/KULLANICI_ADIN/db-schema-search.git
+git clone https://github.com/iremDURGUN/db-schema-search.git
 cd db-schema-search
 ```
 
