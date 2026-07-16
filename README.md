@@ -103,32 +103,46 @@ DB-Schema-Search/
 └── requirements.txt
 ```
 
----
+## ⚙️ Kurulum ve Çalıştırma / Installation & Running
 
-## ⚙️ Gereksinimler / Requirements
+### 1. Repoyu Klonlayın / Clone the Repository
 
 ```bash
-pip install pyodbc
+git clone https://github.com/KULLANICI_ADIN/db-schema-search.git
+cd db-schema-search
 ```
-
-SQL Server ODBC Driver:
-
-- ODBC Driver 17 for SQL Server
-veya
-- ODBC Driver 18 for SQL Server
 
 ---
 
-## ▶️ Çalıştırma / Running
+### 2. Gereksinimleri Yükleyin / Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+**TR:** Sisteminizde **ODBC Driver 17** veya **ODBC Driver 18 for SQL Server** yüklü olmalıdır.
+
+**EN:** **ODBC Driver 17** or **ODBC Driver 18 for SQL Server** must be installed on your system.
+
+---
+
+### 3. Uygulamayı Çalıştırın / Run the Application
 
 ```bash
 python main.py
 ```
 
-İlk çalıştırmada bağlantı bilgileri girilir.
+**TR:** İlk çalıştırmada açılan pencereden SQL Server bağlantı bilgilerinizi girin. Bilgiler daha sonraki kullanımlar için **db_settings.json** dosyasına kaydedilecektir.
 
-On the first run, SQL Server connection information will be requested.
+**EN:** On the first launch, enter your SQL Server connection information in the popup window. The settings will be saved in **db_settings.json** for future use.
 
+---
+
+## ⚠️ Güvenlik Notu / Security Note
+
+**TR:** `db_settings.json` dosyası veritabanı bağlantı bilgilerinizi (kullanıcı adı ve parola) içerdiği için `.gitignore` dosyasına eklenmiştir. Bu dosyayı **asla** herkese açık GitHub depolarına yüklemeyin.
+
+**EN:** Since the `db_settings.json` file contains your database connection credentials (username and password), it is included in `.gitignore`. **Never** commit or push this file to a public GitHub repository.
 ---
 
 ## 🔎 Arama Örnekleri / Search Examples
